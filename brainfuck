@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby1.8
+def getc
+	begin
+		`stty -icanon -echo`
+		STDIN.getc
+	ensure
+		`stty icanon echo`
+	end
+end
+
+code = File.read(ARGV[0] || '/dev/stdin').gsub!(/[^<>+-\.,\[\]]*/, '')
+data = "\0" * 30000
+pointer = 0
+pc = -1
+stack = []
+
+while (pc += 1) < code.length
+	case code[pc]
+		when ?>; pointer += 1
+		when ?<; pointer -= 1
+		when ?+; data[pointer] += 1
+		when ?-; data[pointer] -= 1
+		when ?.; putc data[pointer]
+		when ?,; data[pointer] = getc
+		when ?[
+			if data[pointer] == 0
+				depth = 1
+				while byte = code[pc += 1] and depth > 0
+					depth += 92 - byte if byte == ?[ or byte == ?]
+				end
+				pc -= 1
+			else
+				stack.push(pc - 1)
+			end
+		when ?]; pc = stack.pop
+	end
+end
