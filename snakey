@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+print "\e[1m\e[3m"
+
+wiggles = (ARGV[0] or 5).to_i
+wiggles = (1.0 / 0) if wiggles < 0
+
+trap("INT") {$int = true}
+
+begin
+	puts "/\\
+\\\"\\"
+	(1..wiggles).each do
+		" \\ \\
+  \\ \\
+   \\ \\
+    \\ \\
+     \\ \\
+      \\ \\
+       \\ \\
+        \\ \\
+         \\ \\
+          ) )
+         / /
+        / /
+       / /
+      / /
+     / /
+    / /
+   / /
+  / /
+ / /
+( (\n".split(/\n/).each do |line|
+			print "\e[#{30 + rand(8)}m"
+			puts line
+			sleep (ARGV[1] or 0.1).to_f
+		end
+		break if $int
+	end
+ensure
+	puts " \\ \\
+  \\/"
+	print "\e[22m"
+end
