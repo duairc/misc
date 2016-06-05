@@ -1,0 +1,7 @@
+#!/bin/sh
+curl -q -ss "$1" \
+	| grep 'trackinfo :' \
+	| sed 's/,$//' | cut -d: -f2- \
+	| jq -r '.[] | "wget -c -O " + @sh "\(.track_num | tostring | sub("(?<d>^\\d)$"; "0\(.d)"))'\'' '\''\(.title).mp3" + " " + @sh "https:\(.file["mp3-128"])"' \
+	| sh
+exit 0
