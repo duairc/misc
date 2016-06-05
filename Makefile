@@ -1,7 +1,7 @@
 #!/usr/bin/make
 me:
-	ruby -e 'm=`id -u`.to_i==0?"Okay.":"What? Make it yourself.";puts"\e[1A\e[K#{m}"'
+	@sh -c 'test `whoami` = root && echo "Okay." || echo "What? Make it yourself!"'
 a:
-	ruby -e 'print "\e[1A\e[K"'
+	@printf ''
 sandwich:
-	ruby -e 'print "\e[1A\e[K"'
+	@printf ''

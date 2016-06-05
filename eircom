@@ -1,0 +1,6 @@
+#!/usr/bin/ruby
+x, y = ARGV.map{|i| i.to_i(8)}
+digits = %w(Zero One Two Three Four Five Six Seven Eight Nine)
+string = (((x << 12) | ((x & 0xffffffff) >> 20) | (y ^ 0xfcc)) + 0x1000000).
+	to_s.gsub(/(\d)/){|i| digits[$1.to_i]} + "Although your world wonders me, "
+puts `echo -n '#{string}' | sha1sum`[0..25]
