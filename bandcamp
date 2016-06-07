@@ -1,7 +1,21 @@
 #!/bin/sh
-curl -q -ss "$1" \
-	| grep 'trackinfo :' \
-	| sed 's/,$//' | cut -d: -f2- \
-	| jq -r '.[] | "wget -c -O " + @sh "\(.track_num | tostring | sub("(?<d>^\\d)$"; "0\(.d)"))'\'' '\''\(.title).mp3" + " " + @sh "https:\(.file["mp3-128"])"' \
-	| sh
-exit 0
+for url in "$@"; do
+    page="$(curl -ss "$url")"
+    artist="$(printf %s "$page" | grep '^    artist: ' | head -1 | sed s/,$// | cut -d: -f2- | jq -r .)"
+    current="$(printf %s "$page" | grep '^    current: ' | head -1 | sed s/,$// | cut -d: -f2-)"
+    album="$(printf %s "$current" | jq -r .title)"
+    year="$(printf %s "$current" | jq -r '.release_date | strptime("%d %b %Y")[0]')"
+    cover="$(printf %s "$page" | grep '^    artFullsizeUrl:' | head -1 | sed s/,$// | cut -d: -f2- | jq -r .)"
+    genre="$(printf %s "$page" | grep -A4 'tags:</span>' | tail -1 | sed 's/^.*>\(.*\)<.*$/\1/' | sed -e "s/\b\(.\)/\u\1/g")"
+    trackinfo="$(printf %s "$page" | grep '^    trackinfo : ' | head -1 | sed s/,$// | cut -d: -f2-)"
+    if [ -e "$artist"/"$album" ]; then
+        printf 'The directory "%s" already exists! Not downloading this album.\n' "$artist/$album">&2
+        continue
+    fi
+    mkdir -p "$artist"/"$album"
+    (
+        cd "$artist"/"$album"
+        wget "$cover" -O cover.jpg
+        printf %s "$trackinfo" | jq --arg artist "$artist" --arg album "$album" --arg year "$year" --arg genre "$genre" -r 'length as $total | .[] | ((.track_num | tostring | sub("(?<d>^\\d)$"; "0\(.d)")) + " " + .title) as $filename | "wget -O " + ($filename + ".untagged.mp3" | @sh) + " " + ("https:" + .file["mp3-128"] | @sh) + "; ffmpeg -i " + ($filename + ".untagged.mp3" | @sh) + " -i cover.jpg -id3v2_version 3 -write_id3v1 0 -c copy -map 0 -map 1 -metadata:s:v comment=\"Cover (Front)\" -metadata album=" + ($album | @sh) + " -metadata artist=" + ($artist | @sh) + " -metadata title=" + (.title | @sh) + " -metadata genre=" + ($genre | @sh) + " -metadata date=" + ($year | @sh) + " -metadata track=" + ((.track_num | tostring) + "/" + ($total | tostring) | @sh) + " -metadata disc=1/1 " + ($filename + ".mp3" | @sh) + "; rm " + ($filename + ".untagged.mp3" | @sh)' | sh
+    )
+done
