@@ -5,9 +5,9 @@ for url in "$@"; do
     current="$(printf %s "$page" | grep '^    current: ' | head -1 | sed s/,$// | cut -d: -f2-)"
     album="$(printf %s "$current" | jq -r .title)"
     year="$(printf %s "$current" | jq -r '.release_date | strptime("%d %b %Y")[0]')"
-    cover="$(printf %s "$page" | grep '^    artFullsizeUrl:' | head -1 | sed s/,$// | cut -d: -f2- | jq -r .)"
+    cover="$(printf %s "$page" | grep '<link rel="image_src"' | head -1 | sed 's/.*href="\(.*\)".*/\1/')"
     genre="$(printf %s "$page" | grep -A4 'tags:</span>' | tail -1 | sed 's/^.*>\(.*\)<.*$/\1/' | sed -e "s/\b\(.\)/\u\1/g")"
-    trackinfo="$(printf %s "$page" | grep '^    trackinfo : ' | head -1 | sed s/,$// | cut -d: -f2-)"
+    trackinfo="$(printf %s "$page" | grep '^    trackinfo: ' | head -1 | sed s/,$// | cut -d: -f2-)"
     if [ -e "$artist"/"$album" ]; then
         printf 'The directory "%s" already exists! Not downloading this album.\n' "$artist/$album">&2
         continue
